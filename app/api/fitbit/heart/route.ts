@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
 
   if (!session?.accessToken) {
@@ -9,15 +9,25 @@ export async function GET() {
   }
 
   try {
-    const today = new Date().toISOString().split("T")[0];
-    const response = await fetch(
-      `https://api.fitbit.com/1/user/-/activities/heart/date/${today}/1d.json`,
-      {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-      }
-    );
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    
+    let url: string;
+    if (startDate && endDate) {
+      // 期間データを取得
+      url = `https://api.fitbit.com/1/user/-/activities/heart/date/${startDate}/${endDate}.json`;
+    } else {
+      // 単一日のデータを取得
+      const date = startDate || new Date().toISOString().split("T")[0];
+      url = `https://api.fitbit.com/1/user/-/activities/heart/date/${date}/1d.json`;
+    }
+    
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch heart rate data");
