@@ -1,7 +1,17 @@
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface ActivityData {
   summary?: {
@@ -46,6 +56,7 @@ interface SleepData {
 interface ProfileData {
   user?: {
     displayName?: string;
+    lastName?: string;
     avatar?: string;
   };
 }
@@ -142,7 +153,7 @@ export default function Dashboard() {
               )}
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">
-                  {profileData?.user?.displayName || "ユーザー"}さんのダッシュボード
+                  {profileData?.user?.lastName || "ユーザー"}さんのダッシュボード
                 </h1>
                 <p className="text-gray-600">
                   {startDate && endDate
@@ -266,6 +277,61 @@ export default function Dashboard() {
                 <p className="text-gray-500 mt-2">平均</p>
               </div>
             </div>
+
+            {/* 睡眠グラフ */}
+            {sleepData?.sleep && sleepData.sleep.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">睡眠時間の推移</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart
+                    data={sleepData.sleep
+                      .map(s => ({
+                        date: s.dateOfSleep,
+                        睡眠時間: s.minutesAsleep ? Math.round(s.minutesAsleep / 60 * 10) / 10 : 0,
+                        床上時間: s.minutesAwake && s.minutesAsleep 
+                          ? Math.round((s.minutesAwake + s.minutesAsleep) / 60 * 10) / 10 
+                          : 0,
+                      }))
+                      .sort((a, b) => a.date.localeCompare(b.date))}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis 
+                      label={{ value: '時間', angle: -90, position: 'insideLeft' }}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => `${value}時間`}
+                      labelStyle={{ color: '#000' }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="睡眠時間" 
+                      stroke="#6366f1" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="床上時間" 
+                      stroke="#94a3b8" 
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         ) : (
           // 単一日のデータを表示
