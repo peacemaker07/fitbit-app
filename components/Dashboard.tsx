@@ -191,7 +191,7 @@ export default function Dashboard() {
           // 複数日のデータを表示
           <div className="space-y-6">
             {/* 日別データテーブル */}
-            <div className="bg-white rounded-xl shadow-lg p-6 overflow-x-auto">
+            {/* <div className="bg-white rounded-xl shadow-lg p-6 overflow-x-auto">
               <h2 className="text-xl font-bold text-gray-800 mb-4">期間データ一覧</h2>
               <table className="w-full text-sm">
                 <thead>
@@ -228,7 +228,7 @@ export default function Dashboard() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </div> */}
 
             {/* 期間合計サマリー */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
