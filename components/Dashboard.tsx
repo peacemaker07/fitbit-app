@@ -50,6 +50,16 @@ interface SleepData {
     duration?: number;
     minutesAsleep?: number;
     minutesAwake?: number;
+    efficiency?: number;
+    type?: string;
+    levels?: {
+      summary?: {
+        deep?: { minutes: number };
+        light?: { minutes: number };
+        rem?: { minutes: number };
+        wake?: { minutes: number };
+      };
+    };
   }>;
 }
 
@@ -276,24 +286,42 @@ export default function Dashboard() {
                 </p>
                 <p className="text-gray-500 mt-2">平均</p>
               </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-700">平均睡眠スコア</h2>
+                  <span className="text-3xl">⭐</span>
+                </div>
+                <p className="text-4xl font-bold text-green-600">
+                  {(() => {
+                    const sleeps = sleepData?.sleep?.filter(s => s.type === 'stages' && s.efficiency) || [];
+                    if (sleeps.length === 0) return "N/A";
+                    const avgEfficiency = sleeps.reduce((sum, s) => sum + (s.efficiency || 0), 0) / sleeps.length;
+                    return Math.round(avgEfficiency);
+                  })()}
+                </p>
+                <p className="text-gray-500 mt-2">% (平均効率)</p>
+              </div>
             </div>
 
             {/* 睡眠グラフ */}
             {sleepData?.sleep && sleepData.sleep.length > 0 && (
               <div className="bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">睡眠時間の推移</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">睡眠時間とスコアの推移</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart
                     data={sleepData.sleep
+                      .filter(s => s.type === 'stages')
                       .map(s => ({
                         date: s.dateOfSleep,
                         睡眠時間: s.minutesAsleep ? Math.round(s.minutesAsleep / 60 * 10) / 10 : 0,
                         床上時間: s.minutesAwake && s.minutesAsleep 
                           ? Math.round((s.minutesAwake + s.minutesAsleep) / 60 * 10) / 10 
                           : 0,
+                        睡眠スコア: s.efficiency || 0,
                       }))
                       .sort((a, b) => a.date.localeCompare(b.date))}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: 60, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
@@ -304,15 +332,29 @@ export default function Dashboard() {
                       height={80}
                     />
                     <YAxis 
+                      yAxisId="left"
                       label={{ value: '時間', angle: -90, position: 'insideLeft' }}
                       tick={{ fontSize: 12 }}
                     />
+                    <YAxis 
+                      yAxisId="right"
+                      orientation="right"
+                      domain={[0, 100]}
+                      label={{ value: 'スコア(%)', angle: 90, position: 'insideRight' }}
+                      tick={{ fontSize: 12 }}
+                    />
                     <Tooltip 
-                      formatter={(value: number) => `${value}時間`}
+                      formatter={(value: number, name: string) => {
+                        if (name === '睡眠スコア') {
+                          return [`${value}%`, name];
+                        }
+                        return [`${value}時間`, name];
+                      }}
                       labelStyle={{ color: '#000' }}
                     />
                     <Legend />
                     <Line 
+                      yAxisId="left"
                       type="monotone" 
                       dataKey="睡眠時間" 
                       stroke="#6366f1" 
@@ -321,6 +363,7 @@ export default function Dashboard() {
                       activeDot={{ r: 6 }}
                     />
                     <Line 
+                      yAxisId="left"
                       type="monotone" 
                       dataKey="床上時間" 
                       stroke="#94a3b8" 
@@ -328,8 +371,20 @@ export default function Dashboard() {
                       strokeDasharray="5 5"
                       dot={{ r: 4 }}
                     />
+                    <Line 
+                      yAxisId="right"
+                      type="monotone" 
+                      dataKey="睡眠スコア" 
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
+                <p className="text-sm text-gray-500 mt-2">
+                  ※睡眠スコアは睡眠効率(%)を表示しています
+                </p>
               </div>
             )}
           </div>
@@ -419,6 +474,21 @@ export default function Dashboard() {
                 <span className="text-2xl">m</span>
               </p>
               <p className="text-gray-500 mt-2">睡眠</p>
+            </div>
+
+            {/* 睡眠スコアカード */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-700">睡眠スコア</h2>
+                <span className="text-3xl">⭐</span>
+              </div>
+              <p className="text-4xl font-bold text-green-600">
+                {(() => {
+                  const stagesSleep = sleepData?.sleep?.find(s => s.type === 'stages');
+                  return stagesSleep?.efficiency || "N/A";
+                })()}
+              </p>
+              <p className="text-gray-500 mt-2">% (効率)</p>
             </div>
           </div>
         )}
