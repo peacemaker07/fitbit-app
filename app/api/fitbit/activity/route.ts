@@ -16,11 +16,11 @@ export async function GET(request: Request) {
     let url: string;
     if (startDate && endDate) {
       // 期間データを取得
-      url = `https://api.fitbit.com/1/user/-/activities/date/${startDate}/${endDate}.json`;
+      url = `https://api.fitbit.com/1/user/-/activities/activityCalories/date/${startDate}/${endDate}.json`;
     } else {
       // 単一日のデータを取得
       const date = startDate || new Date().toISOString().split("T")[0];
-      url = `https://api.fitbit.com/1/user/-/activities/date/${date}.json`;
+      url = `https://api.fitbit.com/1/user/-/activities/activityCalories/date/${date}.json`;
     }
     
     const response = await fetch(url, {

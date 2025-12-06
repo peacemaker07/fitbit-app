@@ -29,6 +29,10 @@ interface ActivityData {
       distances?: Array<{ distance: number }>;
     };
   }>;
+  "activities-activityCalories"?: Array<{
+    dateTime: string;
+    value: string;
+  }>;
 }
 
 interface HeartData {
@@ -302,6 +306,22 @@ export default function Dashboard() {
                 </p>
                 <p className="text-gray-500 mt-2">% (平均効率)</p>
               </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-700">平均活動カロリー</h2>
+                  <span className="text-3xl">🔥</span>
+                </div>
+                <p className="text-4xl font-bold text-orange-600">
+                  {(() => {
+                    const calories = activityData?.["activities-activityCalories"] || [];
+                    if (calories.length === 0) return "N/A";
+                    const avg = calories.reduce((sum, c) => sum + parseInt(c.value), 0) / calories.length;
+                    return Math.round(avg).toLocaleString();
+                  })()}
+                </p>
+                <p className="text-gray-500 mt-2">kcal (平均)</p>
+              </div>
             </div>
 
             {/* 睡眠グラフ */}
@@ -385,6 +405,80 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-500 mt-2">
                   ※睡眠スコアは睡眠効率(%)を表示しています
                 </p>
+              </div>
+            )}
+
+            {/* 心拍数と活動カロリーグラフ */}
+            {heartData?.["activities-heart"] && heartData["activities-heart"].length > 1 && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">安静時心拍数と活動カロリーの推移</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart
+                    data={heartData["activities-heart"]
+                      .filter(h => h.value?.restingHeartRate)
+                      .map(h => {
+                        const activityCalorie = activityData?.["activities-activityCalories"]?.find(
+                          a => a.dateTime === h.dateTime
+                        );
+                        return {
+                          date: h.dateTime,
+                          安静時心拍数: h.value?.restingHeartRate || 0,
+                          活動カロリー: activityCalorie ? parseInt(activityCalorie.value) : 0,
+                        };
+                      })
+                      .sort((a, b) => a.date.localeCompare(b.date))}
+                    margin={{ top: 5, right: 60, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis 
+                      yAxisId="left"
+                      label={{ value: '心拍数 (bpm)', angle: -90, position: 'insideLeft' }}
+                      tick={{ fontSize: 12 }}
+                      domain={['dataMin - 5', 'dataMax + 5']}
+                    />
+                    <YAxis 
+                      yAxisId="right"
+                      orientation="right"
+                      label={{ value: 'カロリー (kcal)', angle: 90, position: 'insideRight' }}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        if (name === '安静時心拍数') {
+                          return [`${value} bpm`, name];
+                        }
+                        return [`${value} kcal`, name];
+                      }}
+                      labelStyle={{ color: '#000' }}
+                    />
+                    <Legend />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="安静時心拍数" 
+                      stroke="#ef4444" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line 
+                      yAxisId="right"
+                      type="monotone" 
+                      dataKey="活動カロリー" 
+                      stroke="#f97316" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
@@ -489,6 +583,21 @@ export default function Dashboard() {
                 })()}
               </p>
               <p className="text-gray-500 mt-2">% (効率)</p>
+            </div>
+
+            {/* 活動カロリーカード */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-700">活動カロリー</h2>
+                <span className="text-3xl">🔥</span>
+              </div>
+              <p className="text-4xl font-bold text-orange-600">
+                {(() => {
+                  const calorie = activityData?.["activities-activityCalories"]?.[0];
+                  return calorie ? parseInt(calorie.value).toLocaleString() : "N/A";
+                })()}
+              </p>
+              <p className="text-gray-500 mt-2">kcal</p>
             </div>
           </div>
         )}
